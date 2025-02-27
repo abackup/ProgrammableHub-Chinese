@@ -1,38 +1,33 @@
 /*********************************************************************************
- *  MIT License
- *  
- *  Copyright (c) 2021 Gregg E. Berman
- *  
- *  https://github.com/HomeSpan/HomeSpan
- *  
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *  
- *  The above copyright notice and this permission notice shall be included in all
- *  copies or substantial portions of the Software.
- *  
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *  SOFTWARE.
+ * MIT 许可证
+ *
+ * 版权所有 (c) 2021 Gregg E. Berman
+ *
+ * https://github.com/HomeSpan/HomeSpan
+ *
+ * 在此免费授予获得此软件和相关文档文件（“软件”）副本的任何人许可，以无限制方式处理软件，
+ * 包括但不限于使用、复制、修改、合并、发布、分发、再许可和/或销售软件副本的权利，并允许向
+ * 其提供软件的人员这样做，但须遵守以下条件：
+ *
+ * 上述版权声明和本许可声明应包含在软件的所有副本或重要部分中。
+ *
+ * 本软件按“原样”提供，不作任何明示或暗示的保证，包括但不限于适销性、
+ * 特定用途的适用性和不侵权性的保证。在任何情况下，
+ * 作者或版权持有人均不对因
+ * 本软件或使用或以其他方式处理本软件而引起的或与之相关的任何索赔、损害或其他
+ * 责任（无论是合同、侵权或其他行为）负责。
+ *
  *  
  ********************************************************************************/
  
 ////////////////////////////////////////////////////////////
 //                                                        //
-//    HomeSpan: A HomeKit implementation for the ESP32    //
+//      HomeSpan：ESP32 的 HomeKit 实现                   //
 //    ------------------------------------------------    //
 //                                                        //
-// Demonstrates how to implement a Web Server alongside   //
-// of HomeSpan to create a Programmable Hub serving up to //
-// 16 Dimmable or non-Dimmable Lights.                    //
+//       演示如何与 HomeSpan 一起实现网络服务器，         //
+//       以创建可编程集线器，可为多达 16 个可调光          //
+//                或不可调光的灯提供服务。                 //
 //                                                        //
 ////////////////////////////////////////////////////////////
 
@@ -40,17 +35,17 @@
 #include "DEV_LED.h"     
 #include "DEV_Identify.h"       
 
-#include <WebServer.h>                    // include WebServer library
-WebServer webServer(80);                  // create WebServer on port 80
+#include <WebServer.h>                    // 包含 WebServer 库
+WebServer webServer(80);                  // 在端口 80 上创建 WebServer
 
-#define NLIGHTS 16                        // maximum number of light bulbs (limited to 16 since there are only 16 PWM channels)
+#define NLIGHTS 16                        // 灯泡的最大数量（由于只有 16 个 PWM 通道，因此限制为 16 个）
 
-uint8_t pinList[]={0,4,5,12,14,15,16,17,18,19,22,23,25,26,27,32,33};      // list of allowed pins
-char lightNames[NLIGHTS][9];                                              // storage for default light names 
+uint8_t pinList[]={0,4,5,12,14,15,16,17,18,19,22,23,25,26,27,32,33};      // 允许引脚列表
+char lightNames[NLIGHTS][9];                                              // 默认光源名称的存储
 
-nvs_handle lightNVS;                                                      // handle for NVS storage
+nvs_handle lightNVS;                                                      // NVS 存储的句柄
 
-struct {                                                                  // structure to store pin numbers and dimmable flag
+struct {                                                                  // 用于存储引脚号和可调光标志的结构
   uint8_t pin=0;
   uint8_t dimmable=0;
 } lightData[NLIGHTS];
@@ -63,30 +58,30 @@ void setup() {
 
   homeSpan.setLogLevel(1);
 
-  homeSpan.setHostNameSuffix("");         // use null string for suffix (rather than the HomeSpan device ID)
-  homeSpan.setPortNum(1201);              // change port number for HomeSpan so we can use port 80 for the Web Server
-  homeSpan.enableOTA();                   // enable OTA updates
-  homeSpan.setMaxConnections(5);          // reduce max connection to 5 (default is 8) since WebServer and a connecting client will need 2, and OTA needs 1
-  homeSpan.setWifiCallback(setupWeb);     // need to start Web Server after WiFi is established 
+  homeSpan.setHostNameSuffix("");         // 使用空字符串作为后缀（而不是 HomeSpan 设备 ID）
+  homeSpan.setPortNum(1201);              // 更改 HomeSpan 的端口号，以便我们可以将端口 80 用于 Web 服务器
+  homeSpan.enableOTA();                   // 启用 OTA 更新
+  homeSpan.setMaxConnections(5);          // 将最大连接数减少到 5（默认为 8），因为 WebServer 和连接客户端需要 2 个，而 OTA 需要 1 个
+  homeSpan.setWifiCallback(setupWeb);     // 建立 WiFi 后需要启动 Web 服务器
   
   homeSpan.begin(Category::Bridges,"HomeSpan Light Hub","homespanhub");
 
-  for(int i=0;i<NLIGHTS;i++)                              // create default names for each light
+  for(int i=0;i<NLIGHTS;i++)                              // 为每个灯创建默认名称
     sprintf(lightNames[i],"Light-%02d",i+1);
 
   size_t len;  
-  nvs_open("LIGHTS",NVS_READWRITE,&lightNVS);             // open LIGHTS NVS
-  if(!nvs_get_blob(lightNVS,"LIGHTDATA",NULL,&len))       // if data found
-    nvs_get_blob(lightNVS,"LIGHTDATA",&lightData,&len);   // retrieve data
+  nvs_open("LIGHTS",NVS_READWRITE,&lightNVS);             // 打开 LIGHTS NVS
+  if(!nvs_get_blob(lightNVS,"LIGHTDATA",NULL,&len))       // 如果发现数据
+    nvs_get_blob(lightNVS,"LIGHTDATA",&lightData,&len);   // 检索数据
 
-  // Create Bridge Accessory
+  // 创建桥附件
   
   new SpanAccessory(1);  
     new DEV_Identify("HomeSpan Hub","HomeSpan","LS-123","Light Server","1.0",3);
     new Service::HAPProtocolInformation();
       new Characteristic::Version("1.1.0");
 
-  // Dynamically create a new Accessory for each Light defined
+  // 为每个定义的光源动态创建一个新的附件
 
   for(int i=0;i<NLIGHTS;i++){
     if(lightData[i].pin>0){
@@ -96,16 +91,16 @@ void setup() {
     }
   }
   
-} // end of setup()
+} // 设置结束()
 
 //////////////////////////////////////
 
 void loop(){
   
   homeSpan.poll();
-  webServer.handleClient();               // need to process webServer once each loop
+  webServer.handleClient();               // 每次循环需要处理一次 webServer
   
-} // end of loop()
+} // 循环结束()
 
 //////////////////////////////////////
 
@@ -113,7 +108,7 @@ void setupWeb(){
   Serial.print("Starting Light Server Hub...\n\n");
   webServer.begin();
 
-  // Create web routines inline
+  // 内联创建 Web 例程
 
   webServer.on("/", []() {
   
@@ -159,7 +154,7 @@ void setupWeb(){
 
   webServer.on("/configure", []() {
 
-    for(int i=0;i<NLIGHTS;i++)      // clear dimmable status since checkboxes only provide data if box is checked
+    for(int i=0;i<NLIGHTS;i++)      // 清除可调光状态，因为复选框仅在被选中时才提供数据
       lightData[i].dimmable=0;
     
     for(int i=0;i<webServer.args();i++){
@@ -184,8 +179,8 @@ void setupWeb(){
     content += "<br><button onclick=\"document.location='/'\">Return</button> ";
     content += "<button onclick=\"document.location='/reboot'\">Reboot</button>";
 
-    nvs_set_blob(lightNVS,"LIGHTDATA",&lightData,sizeof(lightData));        // update data
-    nvs_commit(lightNVS);                                                   // commit to NVS
+    nvs_set_blob(lightNVS,"LIGHTDATA",&lightData,sizeof(lightData));        // 更新数据
+    nvs_commit(lightNVS);                                                   // 存储到 NVS
 
     webServer.send(200, "text/html", content);
   
@@ -197,10 +192,10 @@ void setupWeb(){
     content += "<meta http-equiv = \"refresh\" content = \"10; url = /\" />";
     webServer.send(200, "text/html", content);
 
-    for(int j=0;j<sizeof(pinList);j++)            // this seems to be needed to ensure all pins are disconnected from led PWM on reboot
-      gpio_reset_pin((gpio_num_t)pinList[j]);     // otherwise ESP32 seems to be retaining some info about pins connectivity?
+    for(int j=0;j<sizeof(pinList);j++)            // 这似乎是必要的，以确保重启时所有引脚都与 LED PWM 断开连接
+      gpio_reset_pin((gpio_num_t)pinList[j]);     // 否则 ESP32 似乎保留了一些有关引脚连接的信息？
       
     ESP.restart();
   });
 
-} // setupWeb
+} // 设置Web
