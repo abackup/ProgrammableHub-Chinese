@@ -1,25 +1,25 @@
 
 //////////////////////////////////
-//   DEVICE-SPECIFIC SERVICES   //
+//      特定于设备的服务        //
 //////////////////////////////////
 
 struct DEV_Identify : Service::AccessoryInformation {
 
-  int nBlinks;                    // number of times to blink built-in LED in identify routine
-  SpanCharacteristic *identify;   // reference to the Identify Characteristic
+  int nBlinks;                    // 识别程序中内置 LED 闪烁的次数
+  SpanCharacteristic *identify;   // 参考识别特征
   
   DEV_Identify(const char *name, const char *manu, const char *sn, const char *model, const char *version, int nBlinks) : Service::AccessoryInformation(){
     
-    new Characteristic::Name(name);                   // create all the required Characteristics with values set based on above arguments
+    new Characteristic::Name(name);                   // 根据上述参数设置值，创建所有必需的特征
     new Characteristic::Manufacturer(manu);
     new Characteristic::SerialNumber(sn);    
     new Characteristic::Model(model);
     new Characteristic::FirmwareRevision(version);
-    identify=new Characteristic::Identify();          // store a reference to the Identify Characteristic for use below
+    identify=new Characteristic::Identify();          // 存储对识别特征的引用以供下面使用
 
-    this->nBlinks=nBlinks;                            // store the number of times to blink the LED
+    this->nBlinks=nBlinks;                            // 存储 LED 闪烁的次数
 
-    pinMode(homeSpan.getStatusPin(),OUTPUT);          // make sure LED is set for output
+    pinMode(homeSpan.getStatusPin(),OUTPUT);          // 确保 LED 已设置为输出
   }
 
   boolean update(){
@@ -31,8 +31,8 @@ struct DEV_Identify : Service::AccessoryInformation {
       delay(250);
     }
 
-    return(true);                               // return true
+    return(true);                               // 返回 true
     
-  } // update
+  } // 更新
   
 };
