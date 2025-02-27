@@ -112,8 +112,8 @@ void setupWeb(){
 
   webServer.on("/", []() {
   
-    String content = "<html><body><form action='/configure' method='POST'><b>HomeSpan Light Server Hub Configuration</b><br><br>";
-    content += "Select pins and check box if dimmable:<br><br>";
+    String content = "<html><body><form action='/configure' method='POST'><b>HomeSpan 灯光服务器中心配置</b><br><br>";
+    content += "选择引脚并勾选可调光复选框：<br><br>";
 
     for(int i=0;i<NLIGHTS;i++){
       content += "<span style=\"color:";
@@ -146,7 +146,7 @@ void setupWeb(){
       content += " name='t" + String(i) + "'></span><br>";      
     }
     
-    content += "<br><input type='reset'><input type='submit' value='Update'></form><br>";
+    content += "<br><input type='重置'><input type='提交' value='更新'></form><br>";
     
     webServer.send(200, "text/html", content);
     
@@ -176,8 +176,8 @@ void setupWeb(){
       else
         lightData[i].dimmable=0;
     
-    content += "<br><button onclick=\"document.location='/'\">Return</button> ";
-    content += "<button onclick=\"document.location='/reboot'\">Reboot</button>";
+    content += "<br><button onclick=\"document.location='/'\">返回</button> ";
+    content += "<button onclick=\"document.location='/reboot'\">重启</button>";
 
     nvs_set_blob(lightNVS,"LIGHTDATA",&lightData,sizeof(lightData));        // 更新数据
     nvs_commit(lightNVS);                                                   // 存储到 NVS
@@ -188,7 +188,7 @@ void setupWeb(){
 
   webServer.on("/reboot", []() {
     
-    String content = "<html><body>Rebooting!  Will return to configuration page in 10 seconds.<br><br>";
+    String content = "<html><body>正在重启！10 秒后将返回配置页面。<br><br>";
     content += "<meta http-equiv = \"refresh\" content = \"10; url = /\" />";
     webServer.send(200, "text/html", content);
 
